@@ -1,0 +1,7 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+
+@import "nativewind/theme";
+
+/* When adding the lightningcss to overrides in the package.json (Step 5 in Nativewind v5 release), delete the package-lock.json file and node_modules folder from project and reinstall the packages (npm install) */
