@@ -1,6 +1,7 @@
 import { useSignIn } from "@clerk/expo";
-import { Href, Link, useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { styled } from "nativewind";
+import { usePostHog } from "posthog-react-native";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -18,6 +19,7 @@ const SafeAreaView = styled(RNSafeAreaView);
 const SignIn = () => {
   const { signIn, errors, fetchStatus } = useSignIn();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
@@ -45,26 +47,23 @@ const SignIn = () => {
 
     if (error) {
       console.error(JSON.stringify(error, null, 2));
+      posthog.capture("$exception", {
+        $exception_type: "SignInError",
+        $exception_message: error.message ?? "Sign-in failed",
+        $exception_source: "sign-in",
+      });
       return;
     }
 
     if (signIn.status === "complete") {
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) {
-            console.log(session?.currentTask);
-            return;
-          }
+      posthog.identify(emailAddress, {
+        $set: { email: emailAddress },
+        $set_once: { first_sign_in_date: new Date().toISOString() },
+      });
+      posthog.capture("user_signed_in", { method: "password" });
 
-          const url = decorateUrl("/(tabs)");
-          if (url.startsWith("http")) {
-            if (typeof window !== "undefined" && window.location) {
-              window.location.href = url;
-            }
-          } else {
-            router.replace("/(tabs)" as Href);
-          }
-        },
+      await signIn.finalize({
+        navigate: () => {},
       });
     } else if (signIn.status === "needs_second_factor") {
       // Handle MFA if needed
@@ -87,21 +86,7 @@ const SignIn = () => {
 
     if (signIn.status === "complete") {
       await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) {
-            console.log(session?.currentTask);
-            return;
-          }
-
-          const url = decorateUrl("\(tabs)");
-          if (url.startsWith("http")) {
-            if (typeof window !== "undefined" && window.location) {
-              window.location.href = url;
-            }
-          } else {
-            router.replace("/(tabs)" as Href);
-          }
-        },
+        navigate: () => {},
       });
     } else {
       console.error("Sign-in attempt not complete:", signIn);
