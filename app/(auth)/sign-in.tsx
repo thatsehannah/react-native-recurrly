@@ -58,9 +58,11 @@ const SignIn = () => {
 
           const url = decorateUrl("/(tabs)");
           if (url.startsWith("http")) {
-            window.location.href = url;
+            if (typeof window !== "undefined" && window.location) {
+              window.location.href = url;
+            }
           } else {
-            router.replace(url as Href);
+            router.replace("/(tabs)" as Href);
           }
         },
       });
@@ -93,9 +95,11 @@ const SignIn = () => {
 
           const url = decorateUrl("\(tabs)");
           if (url.startsWith("http")) {
-            window.location.href = url;
+            if (typeof window !== "undefined" && window.location) {
+              window.location.href = url;
+            }
           } else {
-            router.replace(url as Href);
+            router.replace("/(tabs)" as Href);
           }
         },
       });
